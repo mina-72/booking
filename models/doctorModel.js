@@ -1,4 +1,4 @@
-const specialitiesModel = require("./specialitiesModel");
+// const specialitiesModel = require("./specialitiesModel");
 module.exports = (sequelize, DataTypes) => {
   const Doctor = sequelize.define("doctor", {
     doctorID: {
@@ -20,6 +20,4 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   return Doctor;
-  // specialitiesModel.hasMany(Doctor);
-  // Doctor.belongsTo(specialitiesModel);
 };

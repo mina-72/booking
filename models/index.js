@@ -35,18 +35,18 @@ db.specialities.hasMany(db.doctor);
 db.doctor.belongsTo(db.specialities);
 
 //Many TO Manty: Doctor and Patient and Appointments
-db.appointments = require("./appointmentModel.js")(sequelize, Sequelize);
+db.appointment = require("./appointmentModel.js")(sequelize, Sequelize);
 db.patient = require("./patientModel.js")(sequelize, Sequelize);
 
 db.doctor.belongsToMany(db.patient, {
-  through: db.appointments,
-  foreignKey: "doctorID",
-  otherKey: "patientID",
+  through: db.appointment,
+  foreignKey: "doctorDoctorID",
+  otherKey: "patientPatientID",
 });
 db.patient.belongsToMany(db.doctor, {
-  through: db.appointments,
-  foreignKey: "patientID",
-  otherKey: "doctorID",
+  through: db.appointment,
+  foreignKey: "patientPatientID",
+  otherKey: "doctorDoctorID",
 });
 
 db.sequelize.sync({ force: false, alter: true }).then(() => {
