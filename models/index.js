@@ -5,6 +5,7 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   dialect: dbConfig.dialect,
   operatorsAliases: false,
+  logging: false,
   pool: {
     max: dbConfig.pool.max,
     min: dbConfig.pool.min,
@@ -34,22 +35,21 @@ db.specialities = require("./specialitiesModel.js")(sequelize, Sequelize);
 db.specialities.hasMany(db.doctor);
 db.doctor.belongsTo(db.specialities);
 
+db.patient = require("./patientModel.js")(sequelize, Sequelize);
+
 //Many TO Manty: Doctor and Patient and Appointments
 db.appointment = require("./appointmentModel.js")(sequelize, Sequelize);
-db.patient = require("./patientModel.js")(sequelize, Sequelize);
 
 db.doctor.belongsToMany(db.patient, {
   through: db.appointment,
-  foreignKey: "doctorDoctorID",
-  otherKey: "patientPatientID",
+  foreignKey: "doctorID",
 });
 db.patient.belongsToMany(db.doctor, {
   through: db.appointment,
-  foreignKey: "patientPatientID",
-  otherKey: "doctorDoctorID",
+  foreignKey: "patientID",
 });
 
-db.sequelize.sync({ force: false, alter: true }).then(() => {
+db.sequelize.sync({ force: false, alter: false }).then(() => {
   console.log("re-sync done!");
 });
 
