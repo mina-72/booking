@@ -10,8 +10,11 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true,
     },
-    timedate: {
-      type: DataTypes.DATE,
+    date: {
+      type: DataTypes.DATEONLY,
+    },
+    time: {
+      type: DataTypes.TIME,
       allowNull: true,
     },
   });
