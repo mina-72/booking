@@ -1,11 +1,6 @@
 const db = require("../models");
 const { Op } = require("sequelize");
-// const redis = require("redis");
-
-// const doctor = require("../models/doctorModel");
-// const patient = require("../models/patientModel");
-
-// const redisClient = redis.createClient("192.168.20.1", 6379);
+const redis_server = require("../redis_server");
 
 const Appointment = db.appointment;
 const Doctor = db.doctor;
@@ -43,7 +38,6 @@ const appointmentExist = async (userRequest) => {
     },
   });
 
-  console.log("result: ", result);
   if (result.count == 0) {
     return false;
   } else {
@@ -52,16 +46,24 @@ const appointmentExist = async (userRequest) => {
 };
 
 const doctorIsFull = async (userRequest) => {
-  const doctorCapacity = await redisClient.get(userRequest.doctorID);
-  if (!doctorCapacity) {
-    doctorCapacity = await Doctor.findOne({
+  const redisServer = new redis_server();
+  let doctorCapacity;
+
+  const doctorCapacityCache = await redisServer.getData(
+    "doc_" + userRequest.doctorID
+  );
+  console.log("get doc_" + userRequest.doctorID, "=>", doctorCapacityCache);
+
+  if (doctorCapacityCache) {
+    doctorCapacity = doctorCapacityCache;
+  } else {
+    result = await Doctor.findOne({
       where: { doctorID: userRequest.doctorID },
     });
-    console.log("inside if: ", doctorCapacity.capacity);
+    doctorCapacity = result.capacity;
+    redisServer.setData("doc_" + userRequest.doctorID, doctorCapacity);
+    console.log("set doc_" + userRequest.doctorID, "=>", doctorCapacity);
   }
-
-  console.log("doctorCapacity: ", doctorCapacity.capacity);
-  // console.log("doctorCapacity type is: ", typeof doctorCapacity.capacity);
 
   const assignedAppointment = await Appointment.count({
     where: {
@@ -72,9 +74,8 @@ const doctorIsFull = async (userRequest) => {
     },
   });
   console.log("assignedAppointment: ", assignedAppointment);
-  // console.log("assignedAppointment type is: ", typeof assignedAppointment);
 
-  if (doctorCapacity.capacity > assignedAppointment) {
+  if (doctorCapacity > assignedAppointment) {
     return false;
   } else {
     return true;
