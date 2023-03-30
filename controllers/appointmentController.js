@@ -14,17 +14,15 @@ const createAppointment = async (req, res) => {
   };
 
   if (await appointmentExist(data)) {
-    console.log("Appointment already exists");
     return res
       .status(400)
-      .json({ message: "you have another appointment at this date" });
+      .json({ message: "You have another appointment at this date" });
   }
-  if (await doctorIsFull(data)) {
-    console.log("doctor capacity is full");
-    return res.status(400).json({ message: "fuuuullllly" });
+  if (await saveAppointment(data)) {
+    return res.status(200).json({ message: "Appointment created" });
   }
-  const appointment = await Appointment.create(data);
-  res.status(200).send(appointment);
+
+  res.status(400).json({ message: "Doctor capacity is full at this date" });
 };
 
 const appointmentExist = async (userRequest) => {
@@ -45,14 +43,18 @@ const appointmentExist = async (userRequest) => {
   }
 };
 
-const doctorIsFull = async (userRequest) => {
+const saveAppointment = async (userRequest) => {
   const redisServer = new redis_server();
   let doctorCapacity;
 
   const doctorCapacityCache = await redisServer.getData(
-    "doc_" + userRequest.doctorID
+    "doc_cap_" + userRequest.doctorID
   );
-  console.log("get doc_" + userRequest.doctorID, "=>", doctorCapacityCache);
+  console.log(
+    "cache get doc_cap_" + userRequest.doctorID,
+    "=>",
+    doctorCapacityCache
+  );
 
   if (doctorCapacityCache) {
     doctorCapacity = doctorCapacityCache;
@@ -61,24 +63,69 @@ const doctorIsFull = async (userRequest) => {
       where: { doctorID: userRequest.doctorID },
     });
     doctorCapacity = result.capacity;
-    redisServer.setData("doc_" + userRequest.doctorID, doctorCapacity);
-    console.log("set doc_" + userRequest.doctorID, "=>", doctorCapacity);
+    redisServer.setData("doc_cap_" + userRequest.doctorID, doctorCapacity);
+    console.log(
+      "cache set doc_cap_" + userRequest.doctorID,
+      "=>",
+      doctorCapacity
+    );
   }
 
-  const assignedAppointment = await Appointment.count({
-    where: {
-      [Op.and]: [
-        { doctorID: userRequest.doctorID },
-        { date: userRequest.date },
-      ],
-    },
-  });
-  console.log("assignedAppointment: ", assignedAppointment);
+  let freeCapacity;
+  freeCapacity = await redisServer.getData(
+    "doc_freeCap_" + userRequest.date + "_" + userRequest.doctorID
+  );
 
-  if (doctorCapacity > assignedAppointment) {
-    return false;
-  } else {
+  console.log(
+    "cache get doc_freeCap_" + userRequest.date + "_" + userRequest.doctorID,
+    "=>",
+    freeCapacity
+  );
+
+  if (!freeCapacity) {
+    let appointmentCount = await Appointment.count({
+      where: {
+        [Op.and]: [
+          { doctorID: userRequest.doctorID },
+          { date: userRequest.date },
+        ],
+      },
+    });
+    freeCapacity = doctorCapacity - appointmentCount;
+    redisServer.setData(
+      "doc_freeCap_" + userRequest.date + "_" + userRequest.doctorID,
+      freeCapacity
+    );
+
+    console.log(
+      "cache set doc_freeCap_" + userRequest.date + "_" + userRequest.doctorID,
+      "=>",
+      freeCapacity
+    );
+  }
+
+  if (freeCapacity > 0) {
+    freeCapacity -= 1;
+    const appointment = await Appointment.create(userRequest);
+    redisServer.setData(
+      "doc_freeCap_" + userRequest.date + "_" + userRequest.doctorID,
+      freeCapacity
+    );
+
+    console.log(
+      "cache update doc_freeCap_" +
+        userRequest.date +
+        "_" +
+        userRequest.doctorID,
+      "=>",
+      freeCapacity
+    );
+
     return true;
+  } else {
+    //ToDo: return error message no freeCapacity
+
+    return false;
   }
 };
 
