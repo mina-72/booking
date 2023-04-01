@@ -1,6 +1,4 @@
 const db = require("../models");
-
-// model
 const Patient = db.patient;
 
 const createPatient = async (req, res) => {
