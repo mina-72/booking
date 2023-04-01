@@ -1,8 +1,4 @@
 const db = require("../models");
-const specialities = require("../models/specialitiesModel");
-const sequelize = require("sequelize");
-
-// model
 const Doctor = db.doctor;
 
 const createDoctor = async (req, res) => {
@@ -16,23 +12,11 @@ const createDoctor = async (req, res) => {
   res.status(200).send(doctor);
 };
 
-const getDoctor = async (req, res) => {
-  const result = await Doctor.findAll();
-  res.status(200).send(result);
-};
-// sequelize
-//   .sync()
-//   .then(() => {
-//     Doctor.findAll()
-//       .then((res) => {
-//         console.log(res);
-//       })
-//       .catch((error) => {
-//         console.error("Failed to retrieve data : ", error);
-//       });
-//   })
-//   .catch((error) => {
-//     console.error("Unable to create table : ", error);
-//   });
+//get all doctors
+async function getAllDoctors() {
+  const doctors = await Doctor.findAll();
 
-module.exports = { createDoctor, getDoctor };
+  return doctors;
+}
+
+module.exports = { createDoctor, getAllDoctors };
