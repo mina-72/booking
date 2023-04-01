@@ -13,10 +13,10 @@ const createDoctor = async (req, res) => {
 };
 
 //get all doctors
-async function getAllDoctors() {
+async function getAllDoctors(req, res) {
   const doctors = await Doctor.findAll();
 
-  return doctors;
+  res.status(200).json(doctors);
 }
 
 module.exports = { createDoctor, getAllDoctors };
