@@ -1,28 +1,39 @@
 const db = require("../models");
 const { Op } = require("sequelize");
 const redis_server = require("../redis_server");
+var sem = require("semaphore")(2);
 
 const Appointment = db.appointment;
 const Doctor = db.doctor;
 
-const createAppointment = async (req, res) => {
-  const data = {
-    time: req.body.time,
-    date: req.body.date,
-    doctorID: req.body.doctorID,
-    patientID: req.body.patientID,
-  };
+const createAppointment = (req, res) => {
+  sem.take(async function () {
+    const data = {
+      time: req.body.time,
+      date: req.body.date,
+      doctorID: req.body.doctorID,
+      patientID: req.body.patientID,
+    };
 
-  if (await appointmentExist(data)) {
+    console.log(data);
+
+    if (await appointmentExist(data)) {
+      sem.leave();
+      return res
+        .status(400)
+        .json({ message: "You have another appointment at this date" });
+    }
+
+    if (await saveAppointment(data)) {
+      sem.leave();
+      return res.status(200).json({ message: "Appointment created" });
+    }
+
+    sem.leave();
     return res
       .status(400)
-      .json({ message: "You have another appointment at this date" });
-  }
-  if (await saveAppointment(data)) {
-    return res.status(200).json({ message: "Appointment created" });
-  }
-
-  res.status(400).json({ message: "Doctor capacity is full at this date" });
+      .json({ message: "Doctor capacity is full at this date" });
+  });
 };
 
 const appointmentExist = async (userRequest) => {
