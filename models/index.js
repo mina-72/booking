@@ -50,7 +50,7 @@ db.patient.belongsToMany(db.doctor, {
 });
 
 db.sequelize.sync({ force: false, alter: false }).then(() => {
-  console.log("re-sync done!");
+  // console.log("re-sync done!");
 });
 
 module.exports = db;
