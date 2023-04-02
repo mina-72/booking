@@ -15,8 +15,6 @@ const createAppointment = (req, res) => {
       patientID: req.body.patientID,
     };
 
-    console.log(data);
-
     if (await appointmentExist(data)) {
       sem.leave();
       return res
@@ -140,4 +138,4 @@ const saveAppointment = async (userRequest) => {
   }
 };
 
-module.exports = { createAppointment };
+module.exports = { createAppointment, appointmentExist };
