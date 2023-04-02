@@ -1,7 +1,7 @@
 const db = require("../models");
 const { Op } = require("sequelize");
 const redis_server = require("../redis_server");
-var sem = require("semaphore")(2);
+var sem = require("semaphore")(1);
 
 const Appointment = db.appointment;
 const Doctor = db.doctor;
