@@ -7,6 +7,9 @@ const Appointment = db.appointment;
 const Doctor = db.doctor;
 
 const createAppointment = (req, res) => {
+  if (!/^\d+$/.test(req.body.patientID)) {
+    return res.status(400).json({ message: "Please input integer" });
+  }
   sem.take(async function () {
     const data = {
       time: req.body.time,
